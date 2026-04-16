@@ -1,6 +1,6 @@
 name: flutter_pinned_projects
-description: "A Flutter package to pin projects to the top of the list in the GitHub repository."
-version: 0.0.3
+description: "A Flutter widget to display a user's pinned GitHub repositories (via GitHub GraphQL)."
+version: 0.0.5
 homepage:
 repository: https://github.com/developersailor/flutter_pinned_projects
 

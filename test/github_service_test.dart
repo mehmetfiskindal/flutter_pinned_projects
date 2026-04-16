@@ -18,123 +18,77 @@ void main() {
     });
 
     test(
-      'fetchPinnedRepositories returns a list of repositories on success',
+      'fetchPinnedRepositories returns a list of repositories on GraphQL success',
       () async {
-        final username = 'developersailor';
-        final mockResponse = jsonEncode([
-          {
-            'name': 'Test Repo',
-            'description': 'A test repository',
-            'stargazers_count': 42,
-            'language': 'Dart',
-            'owner': {'avatar_url': 'https://example.com/avatar.png'},
-            'pinned': true,
-          },
-        ]);
-
-        when(
-          mockClient.get(
-            Uri.parse('https://api.github.com/users/$username/repos'),
-          ),
-        ).thenAnswer((_) async => http.Response(mockResponse, 200));
-
-        final repositories = await githubService.fetchPinnedRepositories(
-          username,
-        );
-
-        expect(repositories, isA<List<Repository>>());
-        expect(repositories.length, 1);
-        expect(repositories[0].name, 'Test Repo');
-        expect(repositories[0].stars, 42);
-      },
-    );
-
-    test('fetchPinnedRepositories throws an exception on failure', () async {
-      final username = 'developersailor';
-
-      when(
-        mockClient.get(
-          Uri.parse('https://api.github.com/users/$username/repos'),
-        ),
-      ).thenAnswer((_) async => http.Response('Not Found', 404));
-
-      expect(
-        () async => await githubService.fetchPinnedRepositories(username),
-        throwsException,
-      );
-    });
-
-    test(
-        'fetchPinnedRepositories returns a list of repositories on GraphQL success',
-        () async {
-      final username = 'testuser';
-      final mockGraphQLResponse = jsonEncode({
-        'data': {
-          'user': {
-            'pinnedItems': {
-              'edges': [
-                {
-                  'node': {
-                    'name': 'Repo1',
-                    'description': 'Description 1',
-                    'url': 'https://github.com/testuser/repo1',
-                    'stargazers': {'totalCount': 10},
-                    'primaryLanguage': {'name': 'Dart'},
-                    'owner': {'avatarUrl': 'https://avatar.url/user'}
+        final username = 'testuser';
+        final mockGraphQLResponse = jsonEncode({
+          'data': {
+            'user': {
+              'pinnedItems': {
+                'edges': [
+                  {
+                    'node': {
+                      'name': 'Repo1',
+                      'description': 'Description 1',
+                      'url': 'https://github.com/testuser/repo1',
+                      'stargazers': {'totalCount': 10},
+                      'primaryLanguage': {'name': 'Dart'},
+                      'owner': {'avatarUrl': 'https://avatar.url/user'}
+                    }
+                  },
+                  {
+                    'node': {
+                      'name': 'Repo2',
+                      'description': null, // Test null description
+                      'url': 'https://github.com/testuser/repo2',
+                      'stargazers': {'totalCount': 5},
+                      'primaryLanguage': null, // Test null language
+                      'owner': {'avatarUrl': 'https://avatar.url/user'}
+                    }
                   }
-                },
-                {
-                  'node': {
-                    'name': 'Repo2',
-                    'description': null, // Test null description
-                    'url': 'https://github.com/testuser/repo2',
-                    'stargazers': {'totalCount': 5},
-                    'primaryLanguage': null, // Test null language
-                    'owner': {'avatarUrl': 'https://avatar.url/user'}
-                  }
-                }
-              ]
+                ]
+              }
             }
           }
-        }
-      });
+        });
 
-      when(mockClient.post(
-        Uri.parse('https://api.github.com/graphql'),
-        headers: anyNamed('headers'),
-        body: anyNamed('body'),
-      )).thenAnswer((_) async => http.Response(mockGraphQLResponse, 200));
+        when(mockClient.post(
+          Uri.parse('https://api.github.com/graphql'),
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        )).thenAnswer((_) async => http.Response(mockGraphQLResponse, 200));
 
-      final repositories =
-          await githubService.fetchPinnedRepositories(username);
+        final repositories =
+            await githubService.fetchPinnedRepositories(username);
 
-      expect(repositories, isA<List<Repository>>());
-      expect(repositories.length, 2);
+        expect(repositories, isA<List<Repository>>());
+        expect(repositories.length, 2);
 
-      expect(repositories[0].name, 'Repo1');
-      expect(repositories[0].description, 'Description 1');
-      expect(repositories[0].stars, 10);
-      expect(repositories[0].language, 'Dart');
-      expect(repositories[0].avatarUrl, 'https://avatar.url/user');
-      expect(repositories[0].url, 'https://github.com/testuser/repo1');
+        expect(repositories[0].name, 'Repo1');
+        expect(repositories[0].description, 'Description 1');
+        expect(repositories[0].stars, 10);
+        expect(repositories[0].language, 'Dart');
+        expect(repositories[0].avatarUrl, 'https://avatar.url/user');
+        expect(repositories[0].url, 'https://github.com/testuser/repo1');
 
-      expect(repositories[1].name, 'Repo2');
-      expect(repositories[1].description, 'No description'); // Default value
-      expect(repositories[1].stars, 5);
-      expect(repositories[1].language, 'Unknown'); // Default value
-      expect(repositories[1].avatarUrl, 'https://avatar.url/user');
-      expect(repositories[1].url, 'https://github.com/testuser/repo2');
+        expect(repositories[1].name, 'Repo2');
+        expect(repositories[1].description, 'No description'); // Default value
+        expect(repositories[1].stars, 5);
+        expect(repositories[1].language, 'Unknown'); // Default value
+        expect(repositories[1].avatarUrl, 'https://avatar.url/user');
+        expect(repositories[1].url, 'https://github.com/testuser/repo2');
 
-      // Verify the request body contains the correct query
-      final verificationResult = verify(mockClient.post(
-        any,
-        headers: anyNamed('headers'),
-        body: captureAnyNamed('body'),
-      ));
-      final capturedBody = jsonDecode(verificationResult.captured.single);
-      expect(capturedBody['query'], contains('user(login: "$username")'));
-      expect(capturedBody['query'], contains('pinnedItems(first: 6'));
-    });
+        // Verify the request body contains the correct query
+        final verificationResult = verify(mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: captureAnyNamed('body'),
+        ));
+        final capturedBody = jsonDecode(verificationResult.captured.single);
+        expect(capturedBody['query'], contains('user(login: "$username")'));
+        expect(capturedBody['query'], contains('pinnedItems(first: 6'));
+      },
+    );
 
     test('fetchPinnedRepositories throws an exception on HTTP failure',
         () async {

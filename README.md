@@ -1,12 +1,13 @@
 # Flutter Pinned Projects
 
-Flutter Pinned Projects is a Flutter package designed to help you pin projects to the top of the list in a GitHub repository. This package simplifies the process of managing pinned repositories programmatically.
+Flutter Pinned Projects is a Flutter package that displays a user's pinned GitHub repositories inside your Flutter app.
 
 ## Features
 
-- Pin projects to the top of a GitHub repository list.
-- Easy-to-use API for seamless integration.
-- Built with Flutter and Dart.
+- Fetch pinned repositories via GitHub GraphQL API.
+- Ready-to-use `PinnedProjectsWidget`.
+- Multiple card styles: `modern`, `minimal`, `grid`.
+- Owner avatar support (modern + grid).
 
 ## Installation
 
@@ -14,7 +15,7 @@ Add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  flutter_pinned_projects: ^0.0.3
+  flutter_pinned_projects: ^0.0.4
 ```
 
 Then, run:
@@ -36,6 +37,7 @@ Use the `PinnedProjectsWidget` to display pinned projects:
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_pinned_projects/flutter_pinned_projects.dart';
+import 'package:flutter_pinned_projects/card_style.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,12 +51,26 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('Pinned Projects')),
-        body: const PinnedProjectsWidget(username:"username"),
+        body: PinnedProjectsWidget(
+          username: 'octocat',
+          // Optional: required for higher rate limits and private orgs.
+          // accessToken: '<YOUR_GITHUB_TOKEN>',
+          maxRepos: 6,
+          cardStyle: CardStyle.modern,
+          // Optional: make the widget match your app theme (or override).
+          // seedColor: Colors.deepPurple,
+          // brightness: Brightness.light,
+        ),
       ),
     );
   }
 }
 ```
+
+## Notes
+
+- GitHub GraphQL generally requires authentication. Pass `accessToken` for reliable results.
+- The widget opens repo links using `url_launcher`.
 
 ## License
 

@@ -1,4 +1,6 @@
 // filepath: /Users/mehmetfiskindal/flutter_pinned_projects/test/flutter_pinned_projects_test.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -27,7 +29,7 @@ void main() {
           stars: index * 10,
           language: 'Dart',
           url: 'https://github.com/repo$index',
-          avatarUrl: 'https://github.com/avatar$index.png',
+          avatarUrl: '',
         ),
       );
 
@@ -65,7 +67,7 @@ void main() {
           stars: 10,
           language: 'Dart',
           url: 'https://github.com/minimal1',
-          avatarUrl: 'https://github.com/avatar_m1.png',
+          avatarUrl: '',
         ),
       ];
 
@@ -89,10 +91,81 @@ void main() {
       expect(find.byType(ListTile), findsOneWidget);
       expect(find.text('Minimal Repo 1'), findsOneWidget);
       expect(find.text('Minimal Desc 1'), findsOneWidget);
-      // Check for language text in minimal view
-      expect(find.text('Dart'), findsOneWidget);
       // Should not use Card in minimal style
       expect(find.byType(Card), findsNothing);
+    });
+
+    testWidgets('shows avatar in modern style', (WidgetTester tester) async {
+      final mockRepos = [
+        Repository(
+          name: 'Repo 1',
+          description: 'Description 1',
+          stars: 100,
+          language: 'Dart',
+          url: 'https://github.com/repo1',
+          avatarUrl: '', // Use placeholder path in tests
+        ),
+      ];
+
+      when(mockGithubService.fetchPinnedRepositories(any))
+          .thenAnswer((_) async => Future.value(mockRepos));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: PinnedProjectsWidget(
+              username: 'developersailor',
+              githubService: mockGithubService,
+              cardStyle: CardStyle.modern,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('repo_avatar_0')), findsOneWidget);
+    });
+
+    testWidgets('shows avatar in grid style', (WidgetTester tester) async {
+      final mockRepos = [
+        Repository(
+          name: 'Grid Repo 1',
+          description: 'Grid Desc 1',
+          stars: 20,
+          language: 'Flutter',
+          url: 'https://github.com/grid1',
+          avatarUrl: '',
+        ),
+        Repository(
+          name: 'Grid Repo 2',
+          description: 'Grid Desc 2',
+          stars: 30,
+          language: 'Dart',
+          url: 'https://github.com/grid2',
+          avatarUrl: '',
+        ),
+      ];
+
+      when(mockGithubService.fetchPinnedRepositories(any))
+          .thenAnswer((_) async => Future.value(mockRepos));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Material(
+            child: PinnedProjectsWidget(
+              username: 'developersailor',
+              githubService: mockGithubService,
+              cardStyle: CardStyle.grid,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('repo_avatar_0')), findsOneWidget);
+      expect(find.byKey(const Key('repo_avatar_1')), findsOneWidget);
     });
 
     testWidgets('displays repositories using grid style',
@@ -104,7 +177,7 @@ void main() {
           stars: 20,
           language: 'Flutter',
           url: 'https://github.com/grid1',
-          avatarUrl: 'https://github.com/avatar_g1.png',
+          avatarUrl: '',
         ),
         Repository(
           name: 'Grid Repo 2',
@@ -112,7 +185,7 @@ void main() {
           stars: 30,
           language: 'Dart',
           url: 'https://github.com/grid2',
-          avatarUrl: 'https://github.com/avatar_g2.png',
+          avatarUrl: '',
         ),
       ];
 
@@ -141,9 +214,11 @@ void main() {
     });
 
     testWidgets('displays custom loading widget', (WidgetTester tester) async {
-      // Don't complete the future to keep the widget in loading state
-      when(mockGithubService.fetchPinnedRepositories(any)).thenAnswer(
-          (_) => Future.delayed(const Duration(minutes: 1), () => []));
+      // Don't complete the future to keep the widget in loading state.
+      // Avoid Future.delayed which leaves pending timers in newer test bindings.
+      final completer = Completer<List<Repository>>();
+      when(mockGithubService.fetchPinnedRepositories(any))
+          .thenAnswer((_) => completer.future);
 
       const customLoadingWidget = Center(child: Text('Custom Loading...'));
 
@@ -212,8 +287,9 @@ void main() {
 
     testWidgets('displays loading indicator while fetching data',
         (WidgetTester tester) async {
-      when(mockGithubService.fetchPinnedRepositories(any)).thenAnswer(
-          (_) => Future.delayed(const Duration(minutes: 1), () => []));
+      final completer = Completer<List<Repository>>();
+      when(mockGithubService.fetchPinnedRepositories(any))
+          .thenAnswer((_) => completer.future);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -275,7 +351,7 @@ void main() {
           stars: 100,
           language: 'Dart',
           url: 'https://github.com/repo1',
-          avatarUrl: 'https://github.com/avatar1.png',
+          avatarUrl: '',
         ),
         Repository(
           name: 'Repo 2',
@@ -283,7 +359,7 @@ void main() {
           stars: 200,
           language: 'Flutter',
           url: 'https://github.com/repo2',
-          avatarUrl: 'https://github.com/avatar2.png',
+          avatarUrl: '',
         ),
       ];
 

@@ -82,6 +82,7 @@ class GithubService {
     // Prepare headers - add token if available
     final headers = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     };
 
     if (accessToken != null) {
@@ -102,9 +103,18 @@ class GithubService {
         throw Exception(responseData['errors'][0]['message']);
       }
 
+      final data = responseData['data'];
+      final user = (data is Map<String, dynamic>) ? data['user'] : null;
+      if (user == null) {
+        throw Exception('GitHub user not found');
+      }
+
+      final pinnedItems =
+          (user is Map<String, dynamic>) ? user['pinnedItems'] : null;
       final edges =
-          responseData['data']['user']['pinnedItems']['edges'] as List;
-      return edges.map((edge) => Repository.fromGraphQLJson(edge)).toList();
+          (pinnedItems is Map<String, dynamic>) ? pinnedItems['edges'] : null;
+      final edgeList = (edges is List) ? edges : const [];
+      return edgeList.map((edge) => Repository.fromGraphQLJson(edge)).toList();
     } else {
       throw Exception(
           'GitHub API request failed with status: ${response.statusCode}');
